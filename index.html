@@ -1,1 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TAC 13,8 kV — SCADA | Iderlan Freitas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#000a14;
+  --panel:#000000;
+  --panel2:#05111c;
+  --border:#0e3a5a;
+  --border2:#1a5278;
+  --yellow:#f0c030;
+  --cyan:#00cfee;
+  --green:#00e87a;
+  --red:#ff2040;
+  --orange:#ff8800;
+  --white:#e8f4ff;
+  --dim:#3a6a8a;
+  --font-d:'Orbitron',monospace;
+  --font-m:'Share Tech Mono',monospace;
+  --font-b:'Rajdhani',sans-serif;
+}
+body{background:var(--bg);color:var(--white);font-family:var(--font-b);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.01) 0px,rgba(255,255,255,.01) 1px,transparent 1px,transparent 4px);}
 
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:1rem 1rem 2.5rem;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;background:#000;border:1px solid var(--border2);border-radius:6px;padding:.6rem 1.2rem;margin-bottom:1rem;box-shadow:0 0 20px rgba(0,140,220,.08);}
+.tbl{display:flex;align-items:center;gap:14px;}
+.logo{width:38px;height:38px;border:2px solid var(--cyan);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:11px;font-weight:800;color:var(--cyan);background:rgba(0,207,238,.07);box-shadow:0 0 10px rgba(0,207,238,.15);}
+.tb-title{font-family:var(--font-d);font-size:clamp(.6rem,1.2vw,.78rem);font-weight:800;color:var(--white);letter-spacing:.05em;}
+.tb-sub{font-family:var(--font-m);font-size:9px;color:var(--dim);letter-spacing:.1em;margin-top:2px;}
+.tbr{display:flex;align-items:center;gap:16px;}
+.live{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:9px;color:var(--green);letter-spacing:.08em;background:rgba(0,232,122,.06);border:1px solid rgba(0,232,122,.25);padding:4px 12px;border-radius:3px;}
+.lpulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.2;transform:scale(1.3);}}
+.tb-clk{font-family:var(--font-m);font-size:11px;color:var(--cyan);letter-spacing:.1em;}
+
+/* TITLE */
+.title{text-align:center;margin-bottom:1rem;}
+.title h1{font-family:var(--font-d);font-size:clamp(.85rem,2vw,1.3rem);font-weight:800;letter-spacing:.04em;color:var(--white);line-height:1.25;}
+.yt{color:var(--yellow);}.ct{color:var(--cyan);}
+.title p{font-size:.84rem;color:var(--dim);margin-top:.3rem;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.7;}
+
+/* ALERT */
+.alert{display:flex;align-items:center;gap:10px;font-family:var(--font-m);font-size:11px;font-weight:600;letter-spacing:.05em;padding:9px 16px;border-radius:5px;border:1px solid;margin-bottom:.9rem;transition:all .4s;}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.a-ok{background:rgba(0,232,122,.06);border-color:rgba(0,232,122,.3);color:var(--green);}
+.a-ok .adot{background:var(--green);animation:pulse 2s infinite;}
+.a-err{background:rgba(255,32,64,.07);border-color:rgba(255,32,64,.4);color:var(--red);}
+.a-err .adot{background:var(--red);animation:pulse .35s infinite;}
+.a-warn{background:rgba(240,192,48,.07);border-color:rgba(240,192,48,.35);color:var(--yellow);}
+.a-warn .adot{background:var(--yellow);animation:pulse .6s infinite;}
+.a-gen{background:rgba(0,207,238,.06);border-color:rgba(0,207,238,.3);color:var(--cyan);}
+.a-gen .adot{background:var(--cyan);animation:pulse .8s infinite;}
+.a-done{background:rgba(0,207,238,.06);border-color:rgba(0,207,238,.3);color:var(--cyan);}
+.a-done .adot{background:var(--cyan);}
+
+/* BUTTONS */
+.ctrls{display:flex;align-items:center;gap:8px;margin-bottom:.9rem;flex-wrap:wrap;}
+.btn{font-family:var(--font-b);font-size:.8rem;font-weight:700;letter-spacing:.04em;padding:8px 18px;border-radius:4px;cursor:pointer;border:1px solid;transition:all .15s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-r{background:rgba(255,32,64,.1);border-color:rgba(255,32,64,.55);color:var(--red);}
+.btn-r:hover:not(:disabled){background:rgba(255,32,64,.2);}
+.btn-o{background:rgba(255,136,0,.1);border-color:rgba(255,136,0,.55);color:var(--orange);}
+.btn-o:hover:not(:disabled){background:rgba(255,136,0,.2);}
+.btn-g{background:transparent;border-color:var(--border2);color:var(--dim);}
+.btn-g:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+
+/* TIMER */
+.tbar{display:none;align-items:center;gap:10px;background:#000;border:1px solid var(--border2);border-radius:5px;padding:.6rem 1rem;margin-bottom:.9rem;}
+.tbar.show{display:flex;}
+.tlbl{font-family:var(--font-m);font-size:10px;white-space:nowrap;}
+.ttrack{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.tprog{height:100%;border-radius:2px;transition:width .08s;}
+.tnum{font-family:var(--font-m);font-size:12px;font-weight:700;min-width:40px;text-align:right;}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:1rem;}
+@media(max-width:700px){.metrics{grid-template-columns:repeat(3,1fr);}}
+.mc{background:#000;border:1px solid var(--border2);border-radius:5px;padding:.6rem .8rem;}
+.ml{font-family:var(--font-m);font-size:8px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+.mv{font-family:var(--font-d);font-size:.95rem;font-weight:800;}
+.my{color:var(--yellow);}.mc2{color:var(--cyan);}.mg{color:var(--green);}.mr2{color:var(--red);}.mw{color:#fff;}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:1fr 280px;gap:1rem;margin-bottom:1rem;}
+@media(max-width:820px){.layout{grid-template-columns:1fr;}}
+
+/* DIAGRAM */
+.dcard{background:#000;border:1px solid var(--border2);border-radius:8px;padding:1rem;position:relative;}
+.dcard::before,.dcard::after{content:'';position:absolute;width:14px;height:14px;border-color:var(--cyan);border-style:solid;}
+.dcard::before{top:8px;left:8px;border-width:2px 0 0 2px;}
+.dcard::after{bottom:8px;right:8px;border-width:0 2px 2px 0;}
+.clabel{font-family:var(--font-m);font-size:9px;color:var(--cyan);letter-spacing:.14em;text-transform:uppercase;margin-bottom:.8rem;display:flex;align-items:center;gap:7px;}
+.clabel::before{content:'';width:14px;height:1px;background:var(--cyan);}
+#cvs{display:block;background:#000000;border-radius:4px;}
+
+/* SIDE */
+.side{display:flex;flex-direction:column;gap:9px;}
+.sc{background:#000;border:1px solid var(--border2);border-radius:6px;padding:.8rem .95rem;}
+.st{font-family:var(--font-m);font-size:9px;color:var(--cyan);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.65rem;display:flex;align-items:center;gap:6px;}
+.st::before{content:'';width:10px;height:1px;background:var(--cyan);}
+
+.djl{display:flex;flex-direction:column;gap:4px;}
+.djr{background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:5px 8px;display:flex;align-items:center;justify-content:space-between;}
+.djn{font-family:var(--font-m);font-size:10px;color:var(--white);}
+.djt{font-family:var(--font-m);font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px;min-width:36px;text-align:center;}
+.dc{background:rgba(0,232,122,.1);color:var(--green);border:1px solid rgba(0,232,122,.3);}
+.do{background:rgba(58,106,138,.15);color:var(--dim);border:1px solid var(--border);}
+.dt{background:rgba(255,32,64,.15);color:var(--red);border:1px solid rgba(255,32,64,.5);animation:pulse .3s infinite;}
+.dg{background:rgba(0,207,238,.1);color:var(--cyan);border:1px solid rgba(0,207,238,.3);}
+
+.rr{display:flex;justify-content:space-between;align-items:center;padding:3.5px 0;border-bottom:1px solid var(--border);}
+.rr:last-child{border:none;}
+.rk{font-family:var(--font-m);font-size:9px;color:var(--dim);}
+.rv{font-family:var(--font-m);font-size:10px;font-weight:600;}
+.rv-ok{color:var(--green);}.rv-t{color:var(--red);animation:pulse .3s infinite;}.rv-g{color:var(--cyan);}
+.pbrow{display:flex;gap:4px;margin-top:4px;}
+.pb{font-family:var(--font-m);font-size:9px;padding:2px 7px;border-radius:2px;border:1px solid;}
+.pb-on{background:rgba(240,192,48,.09);color:var(--yellow);border-color:rgba(240,192,48,.35);}
+.pb-t{background:rgba(255,32,64,.15);color:var(--red);border-color:rgba(255,32,64,.5);animation:pulse .3s infinite;}
+
+.genbox{display:flex;align-items:center;gap:9px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:8px;margin-top:5px;}
+.gico{font-size:1.4rem;}
+.ginfo{flex:1;}
+.gname{font-family:var(--font-d);font-size:8px;letter-spacing:.04em;color:var(--white);}
+.gst{font-family:var(--font-m);font-size:9px;margin-top:2px;}
+.gst-off{color:var(--dim);}.gst-s{color:var(--yellow);animation:pulse .5s infinite;}.gst-r{color:var(--green);}
+.rpmbar{height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;}
+.rpmfill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--green));border-radius:2px;transition:width .1s;}
+
+/* FOOTER */
+.footer{text-align:center;border-top:1px solid var(--border2);padding-top:1.2rem;}
+.footer p{font-size:.78rem;color:var(--dim);line-height:1.9;}
+.footer strong{color:var(--white);}
+.tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:.8rem;}
+.tag{font-family:var(--font-m);font-size:9px;color:var(--cyan);border:1px solid rgba(0,207,238,.2);padding:2px 9px;border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div class="tbl">
+    <div class="logo">IEF</div>
+    <div>
+      <div class="tb-title">SISTEMA DE PROTEÇÃO E TRANSFERÊNCIA — 69/13,8 kV</div>
+      <div class="tb-sub">SCADA · TAC · GERADOR DE EMERGÊNCIA · RELÉ GE SR750 · TC · TP</div>
+    </div>
+  </div>
+  <div class="tbr">
+    <div class="live"><div class="lpulse"></div>SIMULAÇÃO AO VIVO</div>
+    <div class="tb-clk" id="clk">--:--:--</div>
+  </div>
+</div>
+
+<div class="title">
+  <h1>Transferência Automática de Carga — <span class="yt">TAC</span> + <span class="ct">Gerador de Emergência</span></h1>
+  <p>Diagrama unifilar com barras 13,8 kV, ties de interligação com TC · TP · Relé GE SR750 (50/51/27) e gerador de emergência. Sistema com 3 níveis de contingência.</p>
+</div>
+
+<div class="alert a-ok" id="alert">
+  <div class="adot"></div>
+  <span id="alert-txt">SISTEMA NORMAL — Rede ativa · Tie 1 fechado · Gerador em stand-by</span>
+</div>
+
+<div class="ctrls">
+  <button class="btn btn-r" id="bf1" onclick="faultTie1()">⚡ Falta no Tie 1 — TAC atua</button>
+  <button class="btn btn-o" id="bf2" onclick="faultGrid()">🔴 Perda da Rede — Gerador parte</button>
+  <button class="btn btn-g" onclick="resetAll()">↺ Resetar Sistema</button>
+</div>
+
+<div class="tbar" id="tbar">
+  <span class="tlbl" id="tlbl" style="color:var(--yellow)">AGUARDANDO</span>
+  <div class="ttrack"><div class="tprog" id="tp" style="width:0%"></div></div>
+  <span class="tnum" id="tn">0.0s</span>
+</div>
+
+<div class="metrics">
+  <div class="mc"><div class="ml">Tensão BP</div><div class="mv my" id="m-bp">13,8 kV</div></div>
+  <div class="mc"><div class="ml">Tensão BI</div><div class="mv mc2" id="m-bi">13,8 kV</div></div>
+  <div class="mc"><div class="ml">Corrente T1</div><div class="mv mg" id="m-i1">320 A</div></div>
+  <div class="mc"><div class="ml">Corrente T2</div><div class="mv mc2" id="m-i2">0 A</div></div>
+  <div class="mc"><div class="ml">RPM Gerador</div><div class="mv mw" id="m-rpm">0</div></div>
+  <div class="mc"><div class="ml">Fonte Ativa</div><div class="mv my" id="m-src">REDE</div></div>
+</div>
+
+<div class="layout">
+  <div class="dcard">
+    <div class="clabel">Diagrama Unifilar — 69/13,8 kV · TC · TP · SR750</div>
+    <canvas id="cvs"></canvas>
+  </div>
+  <div class="side">
+    <div class="sc">
+      <div class="st">Estado dos Disjuntores</div>
+      <div class="djl">
+        <div class="djr"><span class="djn">DJ-01 — Entrada</span><span class="djt dc" id="s01">FCH</span></div>
+        <div class="djr"><span class="djn">DJ-GEN — Gerador</span><span class="djt do" id="sg">ABT</span></div>
+        <div class="djr"><span class="djn">DJ-04 — Tie 1 sup.</span><span class="djt dc" id="s04">FCH</span></div>
+        <div class="djr"><span class="djn">DJ-03 — Tie 1 inf.</span><span class="djt dc" id="s03">FCH</span></div>
+        <div class="djr"><span class="djn">DJ-00 — Tie 2 sup.</span><span class="djt do" id="s00">ABT</span></div>
+        <div class="djr"><span class="djn">DJ-05 — Tie 2 inf.</span><span class="djt do" id="s05">ABT</span></div>
+      </div>
+      <div style="margin-top:6px;display:flex;justify-content:space-between;padding:4px 8px;background:var(--panel2);border-radius:3px;border:1px solid var(--border);">
+        <span style="font-family:var(--font-m);font-size:9px;color:var(--dim);">INTERTRAVAMENTO</span>
+        <span style="font-family:var(--font-m);font-size:9px;color:var(--green);font-weight:700;">ATIVO</span>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="st">Relé GE SR750</div>
+      <div class="rr"><span class="rk">Proteções</span><div class="pbrow"><span class="pb pb-on" id="p50">50</span><span class="pb pb-on" id="p51">51P</span><span class="pb pb-on" id="p27">27</span></div></div>
+      <div class="rr"><span class="rk">TC</span><span class="rv rv-ok">200/5 A</span></div>
+      <div class="rr"><span class="rk">TP</span><span class="rv rv-ok">13800/115 V</span></div>
+      <div class="rr"><span class="rk">Pickup 51P</span><span class="rv rv-ok">1000 A</span></div>
+      <div class="rr"><span class="rk">Pickup 27</span><span class="rv rv-ok">80% Vn</span></div>
+      <div class="rr"><span class="rk">TMS</span><span class="rv">1,0</span></div>
+      <div class="rr"><span class="rk">I medida</span><span class="rv rv-ok" id="ri">320 A</span></div>
+      <div class="rr"><span class="rk">V medida</span><span class="rv rv-ok" id="rvv">13,8 kV</span></div>
+      <div class="rr"><span class="rk">TRIP 50</span><span class="rv rv-ok" id="rt50">—</span></div>
+      <div class="rr"><span class="rk">TRIP 51P</span><span class="rv rv-ok" id="rt51">—</span></div>
+      <div class="rr"><span class="rk">TRIP 27</span><span class="rv rv-ok" id="rt27">—</span></div>
+    </div>
+    <div class="sc">
+      <div class="st">Gerador de Emergência</div>
+      <div class="genbox">
+        <div class="gico">⚙️</div>
+        <div class="ginfo">
+          <div class="gname">GEN-01 · 13,8 kV · 2 MVA</div>
+          <div class="gst gst-off" id="gs">STAND-BY</div>
+          <div class="rpmbar"><div class="rpmfill" id="rpmf" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p><strong>Iderlan Freitas</strong><br/>
+  Desenvolvido com <strong>JavaScript · HTML5 Canvas · Python · Jupyter Notebook</strong><br/>
+  Relé <strong>GE SR750</strong> · Proteção 50/51P/27 · TC 200/5A · TP 13800/115V · TAC + Gerador 13,8 kV</p>
+  <div class="tags">
+    <span class="tag">#ProtecaoEletrica</span><span class="tag">#TAC</span>
+    <span class="tag">#GeradorEmergencia</span><span class="tag">#SR750</span>
+    <span class="tag">#Rele5051</span><span class="tag">#EngenhariaEletrica</span>
+    <span class="tag">#Subestacao</span><span class="tag">#13kV</span>
+    <span class="tag">#SCADA</span><span class="tag">#Python</span><span class="tag">#EnergiaBrasil</span>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════
+// STATE
+// ══════════════════════════
+let SIM='normal', trip1=false, autoType=0;
+let timerRAF=null, diagRAF=null;
+let particles=[];
+const DJ={dj01:'closed',djgen:'open',dj04:'closed',dj03:'closed',dj00:'open',dj05:'open'};
+
+setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleTimeString('pt-BR',{hour12:false});},1000);
+
+// ══════════════════════════
+// CANVAS — fixed size, no DPR issues
+// ══════════════════════════
+const cvs=document.getElementById('cvs');
+const ctx=cvs.getContext('2d');
+const CW=700, CH=560;
+cvs.width=CW; cvs.height=CH;
+cvs.style.width='100%'; cvs.style.height='auto';
+
+// ══════════════════════════
+// FIXED LAYOUT COORDS
+// ══════════════════════════
+const L={
+  // 69kV input
+  src:{x:350,y:20},
+  // Transformer
+  tr:{x:350,y:58},
+  // DJ-01
+  dj01:{x:350,y:130},
+  // BARRA PRINCIPAL
+  bp:{y:180, x1:30, x2:670},
+  // Generator (right side)
+  gen:{x:600,y:68},
+  djgen:{x:600,y:130},
+  // TIE 1 column (left)
+  t1:{
+    x:200,
+    djTop_y:240,  // DJ-04
+    tc_y:292,
+    tp_y:335,
+    sr_y:378,
+    djBot_y:420,  // DJ-03
+  },
+  // TIE 2 column (right)
+  t2:{
+    x:480,
+    djTop_y:240,  // DJ-00
+    tc_y:292,
+    tp_y:335,
+    sr_y:378,
+    djBot_y:420,  // DJ-05
+  },
+  // BARRA INTERLIGAÇÃO
+  bi:{y:470, x1:30, x2:670},
+};
+
+// ══════════════════════════
+// PARTICLES
+// ══════════════════════════
+function lerp(a,b,t){return a+(b-a)*t;}
+function ptAt(path,t){
+  const n=path.length-1,s=t*n,i=Math.min(Math.floor(s),n-1),f=s-i;
+  return{x:lerp(path[i].x,path[i+1].x,f),y:lerp(path[i].y,path[i+1].y,f)};
+}
+function initParticles(){
+  particles=[];
+  const bpMid=L.bp.x1+(L.bp.x2-L.bp.x1)*.5;
+  // main feed
+  const pm=[{x:L.src.x,y:L.src.y},{x:L.tr.x,y:L.tr.y+30},{x:L.dj01.x,y:L.dj01.y},{x:bpMid,y:L.bp.y}];
+  for(let i=0;i<5;i++) particles.push({path:pm,t:i/5,spd:.009,flow:'main',col:'#f0c030',sz:3});
+  // tie1
+  const pt1=[{x:L.bp.x1+(L.bp.x2-L.bp.x1)*.286,y:L.bp.y},{x:L.t1.x,y:L.t1.djTop_y},{x:L.t1.x,y:L.t1.tc_y},{x:L.t1.x,y:L.t1.tp_y},{x:L.t1.x,y:L.t1.sr_y},{x:L.t1.x,y:L.t1.djBot_y},{x:L.bi.x1+(L.bi.x2-L.bi.x1)*.286,y:L.bi.y}];
+  for(let i=0;i<7;i++) particles.push({path:pt1,t:i/7,spd:.007,flow:'t1',col:'#f0c030',sz:3.2});
+  // tie2
+  const pt2=[{x:L.bp.x1+(L.bp.x2-L.bp.x1)*.686,y:L.bp.y},{x:L.t2.x,y:L.t2.djTop_y},{x:L.t2.x,y:L.t2.tc_y},{x:L.t2.x,y:L.t2.tp_y},{x:L.t2.x,y:L.t2.sr_y},{x:L.t2.x,y:L.t2.djBot_y},{x:L.bi.x1+(L.bi.x2-L.bi.x1)*.686,y:L.bi.y}];
+  for(let i=0;i<7;i++) particles.push({path:pt2,t:i/7,spd:.008,flow:'t2',col:'#00cfee',sz:3});
+  // gen
+  const pg=[{x:L.gen.x,y:L.gen.y+22},{x:L.djgen.x,y:L.djgen.y},{x:L.bp.x1+(L.bp.x2-L.bp.x1)*.857,y:L.bp.y}];
+  for(let i=0;i<5;i++) particles.push({path:pg,t:i/5,spd:.011,flow:'gen',col:'#00e87a',sz:3.2});
+}
+initParticles();
+
+function flowOn(f){
+  if(f==='main') return SIM==='normal'||SIM==='path2';
+  if(f==='t1') return SIM==='normal';
+  if(f==='t2') return SIM==='path2'||SIM==='genrunning';
+  if(f==='gen') return SIM==='genrunning';
+  return false;
+}
+
+// ══════════════════════════
+// DRAW PRIMITIVES
+// ══════════════════════════
+function wire(x1,y1,x2,y2,col,lw=2.2){
+  ctx.save();
+  ctx.globalAlpha=col==='#060f1a'?.2:1;
+  if(col!=='#060f1a'){ctx.shadowColor=col;ctx.shadowBlur=5;}
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.restore();
+}
+
+function drawBusbar(x1,y,x2,col,label){
+  // outer glow
+  ctx.save();
+  ctx.shadowColor=col==='#060f1a'?'transparent':col;
+  ctx.shadowBlur=col==='#060f1a'?0:24;
+  ctx.strokeStyle=col;ctx.lineWidth=12;ctx.lineCap='square';
+  ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+  ctx.restore();
+  // inner bright line
+  if(col!=='#060f1a'){
+    ctx.save();ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2;ctx.lineCap='square';
+    ctx.beginPath();ctx.moveTo(x1+2,y);ctx.lineTo(x2-2,y);ctx.stroke();ctx.restore();
+  }
+  // end ticks
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=3;
+  [[x1,y],[x2,y]].forEach(([px,py])=>{
+    ctx.beginPath();ctx.moveTo(px,py-10);ctx.lineTo(px,py+10);ctx.stroke();
+  });
+  ctx.restore();
+  // label
+  ctx.font='bold 11px Share Tech Mono';ctx.fillStyle=col;
+  ctx.textAlign='left';ctx.fillText(label,x1+6,y-14);
+}
+
+function drawDJ(x,y,key,lbl){
+  const s=DJ[key];
+  const col=s==='closed'?'#f0c030':s==='trip'?'#ff2040':s==='gen'?'#00e87a':'#1a3a5a';
+  const sz=13;
+  ctx.save();
+  if(s!=='open'){ctx.shadowColor=col;ctx.shadowBlur=14;}
+  ctx.fillStyle=s==='closed'?'rgba(240,192,48,.1)':s==='gen'?'rgba(0,232,122,.1)':s==='trip'?'rgba(255,32,64,.15)':'rgba(5,17,28,.8)';
+  ctx.strokeStyle=col;ctx.lineWidth=2;
+  ctx.beginPath();ctx.rect(x-sz,y-sz,sz*2,sz*2);ctx.fill();ctx.stroke();
+  ctx.strokeStyle=col;ctx.lineWidth=2.2;
+  if(s==='closed'||s==='gen'){
+    ctx.beginPath();ctx.moveTo(x-8,y);ctx.lineTo(x+8,y);ctx.stroke();
+  } else {
+    ctx.beginPath();ctx.moveTo(x-7,y+6);ctx.lineTo(x+7,y-6);ctx.stroke();
+  }
+  ctx.restore();
+  ctx.font='9px Share Tech Mono';ctx.fillStyle=col;ctx.textAlign='center';
+  ctx.fillText(lbl,x,y+sz+12);ctx.textAlign='left';
+}
+
+function drawTrafo(x,y){
+  ctx.save();ctx.shadowColor='rgba(240,192,48,.5)';ctx.shadowBlur=18;
+  ctx.strokeStyle='#f0c030';ctx.lineWidth=2.2;ctx.fillStyle='rgba(240,192,48,.06)';
+  ctx.beginPath();ctx.arc(x,y+8,13,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y+24,13,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.restore();
+  ctx.font='bold 9px Share Tech Mono';ctx.fillStyle='#f0c030';ctx.textAlign='center';
+  ctx.fillText('TR-01',x,y-2);
+  ctx.font='8px Share Tech Mono';ctx.fillStyle='#3a6a8a';
+  ctx.fillText('69/13,8 kV',x,y-13);
+  // 69kV stub
+  ctx.save();ctx.strokeStyle='#1a5278';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(x,y-13);ctx.lineTo(x,y-2);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+  ctx.font='8px Share Tech Mono';ctx.fillStyle='#1a5278';ctx.textAlign='center';
+  ctx.fillText('69 kV',x,y-21);ctx.textAlign='left';
+}
+
+function drawGen(x,y,active){
+  const col=active?'#00e87a':'#1a3a5a';
+  ctx.save();ctx.shadowColor=active?'rgba(0,232,122,.5)':'transparent';ctx.shadowBlur=active?20:0;
+  ctx.strokeStyle=col;ctx.lineWidth=2.2;ctx.fillStyle=active?'rgba(0,232,122,.08)':'rgba(5,17,28,.7)';
+  ctx.beginPath();ctx.arc(x,y,22,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.font='bold 14px Orbitron';ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('G',x,y);ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.restore();
+  ctx.font='9px Share Tech Mono';ctx.fillStyle=col;ctx.textAlign='center';
+  ctx.fillText('GEN-01',x,y+36);ctx.fillText('2 MVA',x,y+48);ctx.textAlign='left';
+}
+
+function drawTC(x,y,col){
+  ctx.save();if(col!=='#060f1a'){ctx.shadowColor=col;ctx.shadowBlur=7;}
+  ctx.strokeStyle=col;ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.arc(x-7,y,9,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(x+7,y,9,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+  ctx.font='bold 8px Share Tech Mono';ctx.fillStyle=col;ctx.textAlign='center';
+  ctx.fillText('TC',x,y+21);ctx.textAlign='left';
+}
+
+function drawTP(x,y,col){
+  ctx.save();if(col!=='#060f1a'){ctx.shadowColor=col;ctx.shadowBlur=6;}
+  ctx.strokeStyle=col;ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.arc(x,y-6,9,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y+8,9,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+  ctx.font='bold 8px Share Tech Mono';ctx.fillStyle=col;ctx.textAlign='center';
+  ctx.fillText('TP',x,y+22);ctx.textAlign='left';
+}
+
+function drawRelay(x,y,col,tripped){
+  const bc=tripped?'#ff2040':col;
+  const W=46,H=26;
+  ctx.save();
+  ctx.shadowColor=tripped?'rgba(255,32,64,.7)':col==='#060f1a'?'transparent':'rgba(240,192,48,.3)';
+  ctx.shadowBlur=tripped?18:col==='#060f1a'?0:8;
+  ctx.fillStyle=tripped?'rgba(255,32,64,.12)':col==='#060f1a'?'rgba(5,17,28,.6)':'rgba(240,192,48,.06)';
+  ctx.strokeStyle=bc;ctx.lineWidth=2;
+  ctx.beginPath();ctx.rect(x-W/2,y-H/2,W,H);ctx.fill();ctx.stroke();
+  ctx.restore();
+  ctx.font='bold 7px Share Tech Mono';ctx.fillStyle=bc;ctx.textAlign='center';
+  ctx.fillText('SR-750',x,y-4);
+  ctx.font='bold 8px Share Tech Mono';
+  ctx.fillText(tripped?'⚡TRIP':'50/51',x,y+8);
+  ctx.textAlign='left';
+}
+
+function drawTieColumn(t,djTopKey,djBotKey,label,tripped){
+  const s1=DJ[djTopKey],s2=DJ[djBotKey];
+  const energized=(s1==='closed'||s1==='gen')&&(s2==='closed'||s2==='gen');
+  const col=energized?(djTopKey==='dj00'?'#00cfee':'#f0c030'):'#1a3a5a';
+
+  // Label above BP
+  ctx.font='bold 10px Share Tech Mono';ctx.fillStyle=col;ctx.textAlign='center';
+  ctx.fillText(label,t.x,L.bp.y-18);ctx.textAlign='left';
+
+  // BP → top DJ
+  wire(t.x,L.bp.y,t.x,t.djTop_y-14,col);
+  drawDJ(t.x,t.djTop_y,djTopKey,djTopKey.replace('dj','DJ-'));
+  // top DJ → TC
+  wire(t.x,t.djTop_y+14,t.x,t.tc_y-14,col);
+  drawTC(t.x,t.tc_y,col);
+  // TC → TP
+  wire(t.x,t.tc_y+14,t.x,t.tp_y-16,col);
+  drawTP(t.x,t.tp_y,col);
+  // TP → Relay
+  wire(t.x,t.tp_y+16,t.x,t.sr_y-14,col);
+  drawRelay(t.x,t.sr_y,col,tripped);
+  // Relay → bot DJ
+  wire(t.x,t.sr_y+14,t.x,t.djBot_y-14,col);
+  drawDJ(t.x,t.djBot_y,djBotKey,djBotKey.replace('dj','DJ-'));
+  // bot DJ → BI
+  wire(t.x,t.djBot_y+14,t.x,L.bi.y,col);
+}
+
+// ══════════════════════════
+// MAIN DRAW
+// ══════════════════════════
+function draw(){
+  ctx.clearRect(0,0,CW,CH);
+  // black background
+  ctx.fillStyle='#000000';ctx.fillRect(0,0,CW,CH);
+
+  const bpE=DJ.dj01==='closed'||DJ.djgen==='gen';
+  const t1E=DJ.dj04==='closed'&&DJ.dj03==='closed'&&bpE;
+  const t2E=DJ.dj00==='closed'&&DJ.dj05==='closed'&&bpE;
+  const biE=t1E||t2E;
+  const genA=DJ.djgen==='gen';
+
+  // ── BARRAS ──
+  const bpCol=bpE?(genA?'#00e87a':'#f0c030'):'#ff2040';
+  const biCol=biE?(t2E?'#00cfee':'#f0c030'):'#1a3a5a';
+  drawBusbar(L.bp.x1,L.bp.y,L.bp.x2,bpCol,'BARRA PRINCIPAL  13,8 kV');
+  drawBusbar(L.bi.x1,L.bi.y,L.bi.x2,biCol,'BARRA INTERLIGAÇÃO  13,8 kV');
+
+  // ── TRAFO + DJ01 ──
+  drawTrafo(L.tr.x,L.tr.y);
+  wire(L.tr.x,L.tr.y+37,L.dj01.x,L.dj01.y-14,DJ.dj01==='closed'?'#f0c030':'#1a3a5a');
+  drawDJ(L.dj01.x,L.dj01.y,'dj01','DJ-01');
+  wire(L.dj01.x,L.dj01.y+14,L.bp.x1+(L.bp.x2-L.bp.x1)*.5,L.bp.y,DJ.dj01==='closed'?'#f0c030':'#1a3a5a');
+
+  // ── GEN + DJ-GEN ──
+  drawGen(L.gen.x,L.gen.y,genA);
+  wire(L.gen.x,L.gen.y+22,L.djgen.x,L.djgen.y-14,genA?'#00e87a':'#1a3a5a');
+  drawDJ(L.djgen.x,L.djgen.y,'djgen','DJ-GEN');
+  wire(L.djgen.x,L.djgen.y+14,L.bp.x1+(L.bp.x2-L.bp.x1)*.857,L.bp.y,genA?'#00e87a':'#1a3a5a');
+
+  // ── TIES ──
+  drawTieColumn(L.t1,'dj04','dj03','TIE 1',trip1);
+  drawTieColumn(L.t2,'dj00','dj05','TIE 2',false);
+
+  // ── PARTICLES ──
+  particles.forEach(p=>{
+    if(!flowOn(p.flow))return;
+    p.t+=p.spd;if(p.t>1)p.t=0;
+    const pos=ptAt(p.path,p.t);
+    ctx.save();ctx.shadowColor=p.col;ctx.shadowBlur=12;
+    ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(pos.x,pos.y,p.sz,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+
+  // live current readout on diagram
+  if(SIM==='normal'||SIM==='path2'||SIM==='genrunning'){
+    const cur=document.getElementById('m-i1').textContent;
+    ctx.font='9px Share Tech Mono';ctx.fillStyle='rgba(0,232,122,.7)';ctx.textAlign='center';
+    ctx.fillText(cur,L.t1.x,L.t1.sr_y+46);ctx.textAlign='left';
+  }
+
+  diagRAF=requestAnimationFrame(draw);
+}
+
+// ══════════════════════════
+// LIVE CURRENT UPDATE
+// ══════════════════════════
+let wavePhase=0;
+function updateCurrent(){
+  let amp=320;
+  if(SIM==='fault1'||SIM==='transferring') amp=4200;
+  else if(SIM==='gridloss'||SIM==='genstarting') amp=55;
+  wavePhase+=SIM==='fault1'?.22:.15;
+  const cur=Math.abs(Math.round(amp*Math.sin(wavePhase)));
+  document.getElementById('ri').textContent=cur+' A';
+  document.getElementById('m-i1').textContent=cur+' A';
+  requestAnimationFrame(updateCurrent);
+}
+updateCurrent();
+
+// ══════════════════════════
+// UI HELPERS
+// ══════════════════════════
+function setAlert(cls,txt){
+  document.getElementById('alert').className='alert '+cls;
+  document.getElementById('alert-txt').textContent=txt;
+}
+function setDJ(k,st){
+  DJ[k]=st;
+  const ids={dj01:'s01',djgen:'sg',dj04:'s04',dj03:'s03',dj00:'s00',dj05:'s05'};
+  const el=document.getElementById(ids[k]);
+  el.textContent=st==='closed'?'FCH':st==='open'?'ABT':st==='trip'?'TRIP':'GEN';
+  el.className='djt '+(st==='closed'?'dc':st==='trip'?'dt':st==='gen'?'dg':'do');
+}
+function setTimer(show,lbl,pct,val,col='#f0c030'){
+  const el=document.getElementById('tbar');
+  el.className='tbar'+(show?' show':'');
+  if(!show)return;
+  document.getElementById('tlbl').textContent=lbl;document.getElementById('tlbl').style.color=col;
+  document.getElementById('tp').style.width=pct+'%';document.getElementById('tp').style.background=col;
+  document.getElementById('tn').textContent=val;document.getElementById('tn').style.color=col;
+}
+function setRelay(t50,t51,t27){
+  const s=(id,v,cls)=>{document.getElementById(id).textContent=v||'—';document.getElementById(id).className='rv '+(v?cls:'rv-ok');};
+  s('rt50',t50,'rv-t');s('rt51',t51,'rv-t');s('rt27',t27,'rv-g');
+  document.getElementById('p50').className='pb '+(t50?'pb-t':'pb-on');
+  document.getElementById('p51').className='pb '+(t51?'pb-t':'pb-on');
+  document.getElementById('p27').className='pb '+(t27?'pb-t':'pb-on');
+}
+function setGenUI(st,rpm){
+  const el=document.getElementById('gs');
+  el.textContent=st==='off'?'STAND-BY':st==='starting'?'PARTINDO...':'EM OPERAÇÃO';
+  el.className='gst '+(st==='off'?'gst-off':st==='starting'?'gst-s':'gst-r');
+  document.getElementById('rpmf').style.width=(rpm/1800*100)+'%';
+  document.getElementById('m-rpm').textContent=Math.round(rpm);
+}
+function setMetrics(bp,bi,src,sc){
+  document.getElementById('m-bp').textContent=bp;document.getElementById('m-bi').textContent=bi;
+  document.getElementById('rvv').textContent=bp;
+  const el=document.getElementById('m-src');el.textContent=src;el.className='mv '+sc;
+}
+
+// ══════════════════════════
+// FAULT 1
+// ══════════════════════════
+function faultTie1(){
+  if(SIM!=='normal')return;
+  SIM='fault1';trip1=true;
+  document.getElementById('bf1').disabled=true;
+  document.getElementById('bf2').disabled=true;
+  setAlert('a-err','⚡ FALTA NO TIE 1 — SR750 atuou · 50/51 · DJ-04 e DJ-03 em TRIP · DJ-01 mantido fechado');
+  setRelay('TRIP','TRIP',null);
+  setTimeout(()=>{
+    setDJ('dj04','trip');setDJ('dj03','trip');
+    setMetrics('13,8 kV','— kV','REDE','my');
+    setAlert('a-warn','⏱ INTERTRAVAMENTO — Temporização · Comutando para Tie 2...');
+    const DUR=1400,start=performance.now();SIM='transferring';
+    function tick(){
+      const el=performance.now()-start,pct=Math.min(100,el/DUR*100),rem=Math.max(0,(DUR-el)/1000);
+      setTimer(true,'TRANSFERINDO → TIE 2',pct,rem.toFixed(1)+'s','#00cfee');
+      el<DUR?timerRAF=requestAnimationFrame(tick):activateTie2();
+    }
+    tick();
+  },400);
+}
+function activateTie2(){
+  SIM='path2';trip1=false;cancelAnimationFrame(timerRAF);setTimer(false);
+  setDJ('dj04','open');setDJ('dj03','open');
+  setDJ('dj00','closed');setDJ('dj05','closed');
+  setMetrics('13,8 kV','13,8 kV','REDE T2','mc2');
+  document.getElementById('m-i2').textContent='320 A';
+  setAlert('a-done','✅ TIE 2 ATIVO — Transferência concluída · DJ-01 mantido fechado · Sem interrupção!');
+  setRelay(null,null,null);
+  setTimeout(resetAll,5500);
+}
+
+// ══════════════════════════
+// FAULT 2
+// ══════════════════════════
+function faultGrid(){
+  if(SIM!=='normal')return;
+  SIM='gridloss';
+  document.getElementById('bf1').disabled=true;
+  document.getElementById('bf2').disabled=true;
+  setAlert('a-err','🔴 PERDA DA REDE — Relé 27 atuou · DJ-01 abre · Gerador partindo em 2s...');
+  setDJ('dj01','trip');setRelay(null,null,'TRIP');
+  setMetrics('0 kV','0 kV','—','mr2');setGenUI('starting',0);
+  const GT=2000,start=performance.now();SIM='genstarting';
+  function ramp(){
+    const el=performance.now()-start,pct=Math.min(100,el/GT*100),rem=Math.max(0,(GT-el)/1000),rpm=Math.round(el/GT*1800);
+    setTimer(true,'GERADOR PARTINDO',pct,rem.toFixed(1)+'s','#00e87a');
+    setGenUI('starting',rpm);
+    el<GT?timerRAF=requestAnimationFrame(ramp):genOnline();
+  }
+  ramp();
+}
+function genOnline(){
+  SIM='genrunning';cancelAnimationFrame(timerRAF);setTimer(false);
+  setDJ('djgen','gen');setGenUI('running',1800);
+  setMetrics('13,8 kV','13,8 kV','GERADOR','mg');
+  setAlert('a-gen','⚡ GERADOR EM OPERAÇÃO — BP e BI energizadas via Tie 1 · Sem blackout!');
+  setRelay(null,null,null);
+  setTimeout(resetAll,6000);
+}
+
+// ══════════════════════════
+// RESET
+// ══════════════════════════
+function resetAll(){
+  cancelAnimationFrame(timerRAF);SIM='normal';trip1=false;
+  ['dj01','dj04','dj03'].forEach(k=>setDJ(k,'closed'));
+  ['djgen','dj00','dj05'].forEach(k=>setDJ(k,'open'));
+  setTimer(false);
+  setAlert('a-ok','SISTEMA NORMAL — Rede ativa · Tie 1 fechado · Gerador stand-by');
+  setMetrics('13,8 kV','13,8 kV','REDE','my');
+  document.getElementById('m-i2').textContent='0 A';
+  setGenUI('off',0);setRelay(null,null,null);
+  document.getElementById('bf1').disabled=false;
+  document.getElementById('bf2').disabled=false;
+  initParticles();
+}
+
+// ══════════════════════════
+// AUTO LOOP
+// ══════════════════════════
+function autoLoop(){
+  resetAll();
+  setTimeout(()=>{
+    autoType%2===0?faultTie1():faultGrid();autoType++;
+    const chk=setInterval(()=>{if(SIM==='normal'){clearInterval(chk);setTimeout(autoLoop,2500);}},300);
+  },3000);
+}
+
+draw();
+setTimeout(autoLoop,1800);
+</script>
+</body>
+</html>
